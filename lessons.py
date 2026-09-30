@@ -1,0 +1,36 @@
+"""화면의 설명과 수정 예시. 진단 로직과 설명을 분리해 쉽게 수정합니다."""
+LESSONS = [
+    {
+        "id": "A01", "title": "접근 통제 실패", "english": "Broken Access Control",
+        "analogy": "내 사물함 열쇠로 다른 사람의 사물함까지 열리는 상황이에요.",
+        "description": "로그인했다고 모든 정보를 볼 수 있는 것은 아닙니다. 서버가 게시글 주인을 확인하지 않으면 번호를 바꾸는 것만으로 다른 사람의 비공개 글이 보일 수 있어요.",
+        "location": "게시글 조회 · /posts?id=2", "file": "lab.py → read_post()",
+        "fix": "서버에서 매 요청마다 로그인한 사용자와 글의 소유자를 비교합니다. 소유자가 다르면 403(권한 없음)을 반환하세요. 화면의 버튼을 숨기는 것만으로는 해결되지 않습니다.",
+        "before": "# 로그인만 확인하면 다른 사람의 글도 보입니다.\npost = POSTS.get(post_id)\nreturn 200, {\"post\": post}",
+        "after": "post = POSTS.get(post_id)\nif post[\"owner\"] != current_user:\n    return 403, {\"message\": \"볼 권한이 없습니다.\"}\nreturn 200, {\"post\": post}",
+        "task": "앨리스로 본인 글(1번)과 밥의 글(2번)을 열어보세요. 수정 후에는 본인 글은 계속 보이고 밥의 글은 403으로 거절되어야 합니다.",
+        "flag": "REPAIR_ACCESS", "source": "https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/",
+    },
+    {
+        "id": "A02", "title": "보안 설정 오류", "english": "Security Misconfiguration",
+        "analogy": "가게에 문제가 생겼을 때 손님에게 창고 설계도까지 보여주는 상황이에요.",
+        "description": "개발할 때 유용한 상세 오류 화면도 외부에 공개하면 내부 파일 경로와 코드가 드러납니다. 실습에서는 일부러 오류를 만들어 어떤 정보가 보이는지 비교해요.",
+        "location": "오류 처리 · /error?trigger=1", "file": "lab.py → error_page()",
+        "fix": "운영 환경에서는 디버그 출력을 끄세요. 사용자에게는 일반적인 오류 안내를 보여주고 상세한 원인은 접근이 제한된 서버 로그에 기록하세요.",
+        "before": "except ZeroDivisionError:\n    return 500, {\"debug\": traceback.format_exc()}",
+        "after": "except ZeroDivisionError:\n    # 운영: logging.exception으로 보호된 로그에 기록\n    return 500, {\"message\": \"잠시 후 다시 시도해 주세요.\"}",
+        "task": "상세 오류 보기를 눌러 내부 경로와 Traceback(오류 발생 순서)이 나오는지 확인하세요. 수정 후에도 오류 상태인 500은 유지되지만 내부 정보는 숨겨집니다.",
+        "flag": "REPAIR_DEBUG", "source": "https://top10.owasp.org/2025/A02_2025-Security_Misconfiguration/",
+    },
+    {
+        "id": "A05", "title": "인젝션", "english": "Injection",
+        "analogy": "주문서의 메모를 손님 요청이 아니라 가게 운영 명령으로 실행하는 상황이에요.",
+        "description": "검색어는 데이터여야 합니다. 검색어를 SQL(데이터를 찾는 명령)에 그대로 붙이면 사용자가 검색 조건까지 바꿀 수 있어요. 이 실습은 SQL 인젝션의 작은 예제입니다.",
+        "location": "상품 검색 · /search?q=…", "file": "lab.py → search_products()",
+        "fix": "SQL과 입력 데이터를 분리하세요. Python SQLite에서는 ?와 값 튜플을 사용하는 매개변수 바인딩으로 처리합니다. 길이 검사는 보조 수단이며 바인딩을 대체하지 못합니다.",
+        "before": "query = \"SELECT id, name FROM products WHERE name = '\" + keyword + \"'\"\nrows = db.execute(query).fetchall()",
+        "after": "rows = db.execute(\n    \"SELECT id, name FROM products WHERE name = ?\",\n    (keyword,)\n).fetchall()",
+        "task": "정상 검색 ‘노트’는 1개여야 합니다. 참 조건과 거짓 조건의 결과를 비교하세요. 수정 후에는 두 테스트 입력 모두 평범한 검색어가 되어 0개가 나오고, ‘노트’ 검색은 유지됩니다.",
+        "flag": "REPAIR_SQL", "source": "https://top10.owasp.org/2025/A05_2025-Injection/",
+    },
+]
